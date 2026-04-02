@@ -1,0 +1,40 @@
+// Suspicious PowerShell Execution Detection
+// MITRE ATT&CK: T1059.001 - Command and Scripting Interpreter: PowerShell
+// Severity: Medium
+// Description: Detects encoded, obfuscated, or suspicious PowerShell command patterns
+// Data Source: DeviceProcessEvents (Defender for Endpoint)
+
+let suspiciousPatterns = dynamic([
+    "-EncodedCommand", "-enc ", "-e ",
+    "FromBase64String", "System.Convert",
+    "Invoke-Expression", "iex ", "iex(",
+    "Invoke-WebRequest", "Invoke-RestMethod",
+    "Net.WebClient", "DownloadString", "DownloadFile",
+    "Start-BitsTransfer",
+    "bypass", "-nop", "-noni", "-w hidden",
+    "New-Object System.Net.Sockets",
+    "TCPClient", "System.Net.NetworkCredential"
+]);
+DeviceProcessEvents
+| where TimeGenerated > ago(24h)
+| where FileName =~ "powershell.exe" or FileName =~ "pwsh.exe"
+| where ProcessCommandLine has_any (suspiciousPatterns)
+| extend
+    IsEncoded = ProcessCommandLine has_any ("-EncodedCommand", "-enc ", "-e "),
+    IsDownloader = ProcessCommandLine has_any ("DownloadString", "DownloadFile", "Invoke-WebRequest", "Start-BitsTransfer"),
+    IsObfuscated = ProcessCommandLine has_any ("FromBase64String", "System.Convert"),
+    HasNetworkActivity = ProcessCommandLine has_any ("TCPClient", "System.Net.Sockets", "Net.WebClient"),
+    CommandLength = strlen(ProcessCommandLine)
+| project
+    TimeGenerated,
+    DeviceName,
+    AccountName,
+    ProcessCommandLine,
+    IsEncoded,
+    IsDownloader,
+    IsObfuscated,
+    HasNetworkActivity,
+    CommandLength,
+    InitiatingProcessFileName,
+    InitiatingProcessCommandLine
+| order by TimeGenerated desc

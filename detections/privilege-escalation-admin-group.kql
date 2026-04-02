@@ -1,0 +1,30 @@
+// Privilege Escalation - User Added to Admin Group
+// MITRE ATT&CK: T1078.003 - Valid Accounts: Local Accounts
+// Severity: High
+// Description: Detects when a user account is added to a local or domain administrator group
+// Data Source: SecurityEvent (Windows Security Logs)
+
+let adminGroupSIDs = dynamic([
+    "S-1-5-32-544",   // BUILTIN\Administrators
+    "S-1-5-32-548",   // BUILTIN\Account Operators
+    "S-1-5-32-549",   // BUILTIN\Server Operators
+    "S-1-5-32-551"    // BUILTIN\Backup Operators
+]);
+SecurityEvent
+| where TimeGenerated > ago(24h)
+| where EventID in (4728, 4732, 4756)  // Member added to global/local/universal security group
+| where TargetSid in (adminGroupSIDs)
+    or TargetUserName has_any ("Administrators", "Domain Admins", "Enterprise Admins", "Schema Admins")
+| project
+    TimeGenerated,
+    EventID,
+    Activity,
+    GroupModified = TargetUserName,
+    GroupSID = TargetSid,
+    MemberAdded = MemberName,
+    MemberSID = MemberSid,
+    ModifiedBy = SubjectAccount,
+    ModifiedByDomain = SubjectDomainName,
+    Computer,
+    LogonId = SubjectLogonId
+| order by TimeGenerated desc

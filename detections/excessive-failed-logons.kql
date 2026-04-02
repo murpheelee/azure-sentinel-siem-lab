@@ -1,0 +1,38 @@
+// Excessive Failed Logon Attempts
+// MITRE ATT&CK: T1110.001 - Brute Force: Password Guessing
+// Severity: Medium
+// Description: Detects more than 10 failed logon attempts within 15 minutes from a single source
+// Data Source: SecurityEvent (Windows Security Logs)
+
+let threshold = 10;
+let timeWindow = 15m;
+SecurityEvent
+| where TimeGenerated > ago(1h)
+| where EventID == 4625
+| where LogonType in (2, 3, 7, 10)
+| summarize
+    FailedAttempts = count(),
+    TargetAccounts = make_set(TargetAccount, 20),
+    UniqueAccountsTargeted = dcount(TargetAccount),
+    FailureReasons = make_set(FailureReason, 5),
+    LogonTypes = make_set(LogonType, 5),
+    FirstAttempt = min(TimeGenerated),
+    LastAttempt = max(TimeGenerated)
+    by SourceIP = IpAddress, Computer
+| where FailedAttempts >= threshold
+| where (LastAttempt - FirstAttempt) <= timeWindow
+| extend
+    IsPasswordSpray = UniqueAccountsTargeted > 3,
+    AttackType = iff(UniqueAccountsTargeted > 3, "Password Spray", "Brute Force")
+| project
+    Computer,
+    SourceIP,
+    AttackType,
+    FailedAttempts,
+    UniqueAccountsTargeted,
+    TargetAccounts,
+    FailureReasons,
+    FirstAttempt,
+    LastAttempt,
+    AttackDuration = LastAttempt - FirstAttempt
+| order by FailedAttempts desc

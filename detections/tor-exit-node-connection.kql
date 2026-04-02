@@ -1,0 +1,33 @@
+// Tor Exit Node Connection Detection
+// MITRE ATT&CK: T1090.003 - Proxy: Multi-hop Proxy
+// Severity: High
+// Description: Detects outbound connections to known Tor exit node ports
+// Data Source: DeviceNetworkEvents (Defender for Endpoint)
+
+let torPorts = dynamic([9001, 9030, 9040, 9050, 9051, 9150]);
+let torProcesses = dynamic(["tor.exe", "firefox.exe"]);
+DeviceNetworkEvents
+| where TimeGenerated > ago(24h)
+| where InitiatingProcessFileName in~ (torProcesses)
+| where RemotePort in (torPorts) or RemotePort in (80, 443)
+| summarize
+    ConnectionCount = count(),
+    UniqueRemoteIPs = dcount(RemoteIP),
+    RemoteIPs = make_set(RemoteIP, 20),
+    RemotePorts = make_set(RemotePort, 10),
+    FirstConnection = min(TimeGenerated),
+    LastConnection = max(TimeGenerated)
+    by DeviceName, InitiatingProcessAccountName, InitiatingProcessFileName
+| where ConnectionCount > 1
+| project
+    DeviceName,
+    User = InitiatingProcessAccountName,
+    Process = InitiatingProcessFileName,
+    ConnectionCount,
+    UniqueRemoteIPs,
+    RemoteIPs,
+    RemotePorts,
+    FirstConnection,
+    LastConnection,
+    Duration = LastConnection - FirstConnection
+| order by ConnectionCount desc

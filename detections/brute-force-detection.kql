@@ -1,0 +1,39 @@
+// Brute Force Detection Rule
+// MITRE ATT&CK: T1110 - Brute Force
+// Severity: High
+// Description: Detects 10+ failed logon attempts followed by a successful logon from the same source IP
+// Data Source: SecurityEvent (Windows Security Logs)
+
+let failureThreshold = 10;
+let timeWindow = 1h;
+let failedLogons = SecurityEvent
+| where TimeGenerated > ago(timeWindow)
+| where EventID == 4625
+| where LogonType in (2, 3, 10)  // Interactive, Network, RemoteInteractive
+| summarize
+    FailedCount = count(),
+    FirstAttempt = min(TimeGenerated),
+    LastAttempt = max(TimeGenerated),
+    FailedAccounts = make_set(TargetAccount, 10)
+    by SourceIP = IpAddress
+| where FailedCount >= failureThreshold;
+let successfulLogons = SecurityEvent
+| where TimeGenerated > ago(timeWindow)
+| where EventID == 4624
+| where LogonType in (2, 3, 10)
+| project SuccessTime = TimeGenerated, SourceIP = IpAddress, TargetAccount, LogonType, WorkstationName;
+failedLogons
+| join kind=inner successfulLogons on SourceIP
+| where SuccessTime between (LastAttempt .. (LastAttempt + 30m))
+| project
+    SourceIP,
+    TargetAccount,
+    FailedCount,
+    FailedAccounts,
+    FirstAttempt,
+    LastAttempt,
+    SuccessTime,
+    TimeBetweenLastFailureAndSuccess = SuccessTime - LastAttempt,
+    LogonType,
+    WorkstationName
+| order by FailedCount desc
