@@ -16,22 +16,22 @@ Deploy and configure Microsoft Sentinel as a cloud SIEM solution, demonstrating 
 ## Lab Architecture
 
 ```
-                    ┌──────────────────────────────────┐
-                    │       Microsoft Sentinel          │
-                    │    (SIEM + SOAR Platform)         │
-                    └──────────┬───────────────────────┘
-                               │
-                    ┌──────────┴───────────────────────┐
-                    │     Log Analytics Workspace       │
-                    └──────────┬───────────────────────┘
-                               │
-          ┌────────────────────┼────────────────────┐
-          │                    │                    │
-   ┌──────┴──────┐    ┌───────┴──────┐    ┌───────┴──────┐
-   │  Windows VM  │    │  Azure AD    │    │  NSG Flow    │
-   │  Event Logs  │    │  Sign-in     │    │  Logs        │
-   │  (Sysmon)    │    │  Logs        │    │              │
-   └─────────────┘    └──────────────┘    └──────────────┘
+         ┌─────────────────────────────────┐
+         │       Microsoft Sentinel        │
+         │     (SIEM + SOAR Platform)      │
+         └───────────────┬─────────────────┘
+                         │
+         ┌───────────────┴─────────────────┐
+         │    Log Analytics Workspace      │
+         └───────────────┬─────────────────┘
+                         │
+         ┌───────────────┼───────────────┐
+         │               │               │
+   ┌─────┴─────┐  ┌─────┴──────┐  ┌─────┴─────┐
+   │ Windows VM │  │  Azure AD  │  │ NSG Flow  │
+   │ Event Logs │  │  Sign-in   │  │   Logs    │
+   │  (Sysmon)  │  │   Logs     │  │           │
+   └───────────┘  └────────────┘  └───────────┘
 ```
 
 ## Tools & Environment
