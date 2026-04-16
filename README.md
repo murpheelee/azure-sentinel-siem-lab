@@ -131,12 +131,24 @@ Custom Sentinel Workbook providing:
 - Failed vs. successful authentication trends
 - Mean time to detection (MTTD) and response (MTTR) metrics
 
+## MITRE ATT&CK Coverage
+
+See **[ATT&CK-COVERAGE.md](ATT&CK-COVERAGE.md)** for the full detection coverage matrix, including:
+
+- Tactic-by-tactic coverage status across the Enterprise matrix
+- Per-rule logic summary, data source, false-positive notes, and tuning guidance
+- Exportable ATT&CK Navigator JSON layer for visualization
+- Prioritized detection roadmap for known coverage gaps
+
+---
+
 ## Key Skills Demonstrated
 
 - Cloud SIEM deployment and configuration
 - Log source onboarding and data connector management
 - KQL query authoring for detection engineering
-- MITRE ATT&CK framework mapping
+- MITRE ATT&CK framework mapping with documented coverage and gaps
 - SOAR playbook development
 - Security dashboard and reporting design
 - Incident investigation and triage workflows
+- Detection-as-code principles: tuning, false-positive tracking, roadmap-driven development
